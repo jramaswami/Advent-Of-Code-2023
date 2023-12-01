@@ -3,15 +3,12 @@ Advent of Code
 Day 1
 Trebuchet?!
 jramaswami
-
-55340 is too low
 """
 
 DIGITS = {
-    "0": 0, "1": 1,"2": 2,"3": 3,"4": 4,"5": 5,"6": 6,"7": 7,"8": 8,"9": 9,
+    "0": 0, "1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9,
     "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
-    "seven": 7, "eight": 8, "nine": 9, "ten": 0, "eleven": 1,
-    "twelve": 2, "thirteen": 3, "fifteen": 5,
+    "seven": 7, "eight": 8, "nine": 9,
 }
 
 
@@ -49,9 +46,10 @@ def test_get_calibration_value():
 
 def recover_calibration_code_b(line):
     "Return calibration code taking into account digits as words"
-    posns = [line.find(d) for d in DIGITS]
-    _, left_digit = min((i, d) for i, d in zip(posns, DIGITS) if i >= 0)
-    _, right_digit = max((i, d) for i, d in zip(posns, DIGITS) if i >= 0)
+    left_posns = [line.find(d) for d in DIGITS]
+    right_posns = [line.rfind(d) for d in DIGITS]
+    _, left_digit = min((i, d) for i, d in zip(left_posns, DIGITS) if i >= 0)
+    _, right_digit = max((i, d) for i, d in zip(right_posns, DIGITS) if i >= 0)
     return (10 * DIGITS[left_digit]) + DIGITS[right_digit]
 
 
@@ -61,22 +59,24 @@ def test_recover_calibration_code_b():
         "two1nine", "eightwothree", "abcone2threexy",
         "xtwone3four", "4nineeightseve2",
         "zoneight234", "7pqrstsixteen",
+        '21xfxfourmzmqbqp1'
     ]
-    expected = [29, 83, 13, 24, 42, 14, 76]
+    expected = [29, 83, 13, 24, 42, 14, 76, 21]
     assert [recover_calibration_code_b(l) for l in lines] == expected
+
 
 
 def main():
     "Main program."
     import pyperclip
     import sys
-    lines = [line for line in sys.stdin]
+    lines = [line.strip() for line in sys.stdin]
     calibration_value_a = get_calibration_value(lines, recover_calibration_code_a)
     print('The calibration a is', calibration_value_a)
     assert calibration_value_a == 56042
     calibration_value_b = get_calibration_value(lines, recover_calibration_code_b)
     print('The calibration b is', calibration_value_b)
-    # assert calibration_value_b == 56042
+    assert calibration_value_b == 55358
     pyperclip.copy(str(calibration_value_b))
     print('It has been copied to the clipboard')
 
