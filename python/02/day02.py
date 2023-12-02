@@ -6,7 +6,12 @@ jramaswami
 """
 
 
+import functools
+import operator
+
+
 def parse_input(input):
+    "Parse input into a list of lists of ..."
     games = []
     for line in input:
         games.append([])
@@ -24,12 +29,24 @@ def parse_input(input):
     return games
 
 
-def is_game_possible(game, cubes={'red': 12, 'green': 13, 'blue': 14}):
+def is_game_possible(game):
+    "Return True if the game is possible with the cubes available."
+    cubes={'red': 12, 'green': 13, 'blue': 14}
     for round in game:
         for number_drawn, color_drawn in round:
             if number_drawn > cubes[color_drawn]:
                 return False
     return True
+
+
+def max_cubes_needed(game):
+    "Return the maximum number of cubes needed to play the game."
+    cubes = {'red': 0, 'green': 0, 'blue': 0}
+    for round in game:
+        for number_drawn, color_drawn in round:
+            cubes[color_drawn] = max(cubes[color_drawn], number_drawn)
+    return cubes
+
 
 def main():
     "Main program"
@@ -39,7 +56,11 @@ def main():
     soln_a = sum([i for i, g in enumerate(games, start=1) if is_game_possible(g)])
     print('The sum of IDs of possible games is', soln_a)
     assert soln_a == 2486
-    pyperclip.copy(str(soln_a))
+    soln_b = sum(functools.reduce(operator.mul, max_cubes_needed(g).values(), 1) for g in games)
+    print('The sum of the power of the games is', soln_b)
+    assert soln_b == 87984
+    pyperclip.copy(str(soln_b))
+
 
 if __name__ == '__main__':
     main()
