@@ -5,9 +5,6 @@ Scratchcards
 """
 
 
-
-
-
 def parse_card(line):
     """
     Parse the card from the given line.
@@ -23,11 +20,16 @@ def parse_card(line):
     return winning_numbers, numbers_you_have
 
 
+def count_your_winning_numbers(winning_numbers, numbers_you_have):
+    "Return the count of cards that you have that are in winning numbers."
+    return sum(1 for n in numbers_you_have if n in winning_numbers)
+
+
 def compute_card_score(winning_numbers, numbers_you_have):
     "Compute the score of the card according to the Elf's rules."
-    your_winning_numbers = [n for n in numbers_you_have if n in winning_numbers]
-    if your_winning_numbers:
-        return pow(2, len(your_winning_numbers) - 1)
+    your_winning_numbers = count_your_winning_numbers(winning_numbers, numbers_you_have)
+    if your_winning_numbers > 0:
+        return pow(2, your_winning_numbers - 1)
     return 0
 
 
@@ -38,26 +40,45 @@ def test_compute_card_score():
     assert [compute_card_score(*c) for c in cards] == expected
 
 
-def solve_a(lines):
+def solve_a(cards):
     "Return the total score of the cards in the input lines."
-    return sum(compute_card_score(*parse_card(l)) for l in lines)
+    return sum(compute_card_score(*c) for c in cards)
 
 
 def test_solve_a():
     with open('../../data/04/test04a.txt') as testfile:
-        result = solve_a(testfile.readlines())
-    assert result == 13
+        cards = [parse_card(l) for l in testfile.readlines()]
+    assert solve_a(cards) == 13
+
+
+def solve_b(cards):
+    "Return the number of cards you end up with after all the copying."
+    card_copies = [1 for _ in cards]
+    for card_index, _ in enumerate(cards):
+        copies_you_win = count_your_winning_numbers(*cards[card_index])
+        for offset in range(1, copies_you_win+1):
+            card_copies[card_index+offset] += card_copies[card_index]
+    return sum(card_copies)
+
+
+def test_solve_b():
+    with open('../../data/04/test04a.txt') as testfile:
+        cards = [parse_card(l) for l in testfile.readlines()]
+    assert solve_b(cards) == 30
 
 
 def main():
     "Main program"
-    import sys
     import pyperclip
-    lines = sys.stdin.readlines()
-    soln_a = solve_a(lines)
+    with open('../../data/04/input04.txt') as infile:
+        cards = [parse_card(l) for l in infile.readlines()]
+    soln_a = solve_a(cards)
     print('The total points for the scratchcards is', soln_a)
     assert soln_a == 23028
-    pyperclip.copy(str(soln_a))
+    soln_b = solve_b(cards)
+    print('You end up with', soln_b, 'total scratchcards')
+    assert soln_b == 9236992
+    pyperclip.copy(str(soln_b))
 
 
 if __name__ == '__main__':
