@@ -5,6 +5,7 @@ Camel Cards
 jramaswami
 
 249291819 is too low
+249293245 is too low
 """
 
 
@@ -14,7 +15,7 @@ import functools
 
 
 CARD_ORDER = 'AKQJT98765432'[::-1]
-CARD_ORDER_WITH_JOKERS = 'AKQJT98765432'[::-1]
+CARD_ORDER_WITH_JOKERS = 'AKQT98765432J'[::-1]
 
 
 class HandType(enum.IntEnum):
@@ -30,25 +31,23 @@ class HandType(enum.IntEnum):
 def compute_hand_type(cards, with_jokers=False):
     if with_jokers:
         card_freqs = collections.Counter(cards)
-        jokers = card_freqs['J']
+        j = card_freqs['J']
         card_freqs['J'] = 0
         freq_freqs = collections.Counter(card_freqs.values())
-        best_hand_type = HandType.HighCard
-        for a in range(jokers+1):
-            b = jokers - a
-            if freq_freqs[5-a] > 0:
-                best_hand_type = max(best_hand_type, HandType.FiveOfAKind)
-            elif freq_freqs[4-a] > 0:
-                best_hand_type = max(best_hand_type, HandType.FourOfAKind)
-            elif freq_freqs[3-a] > 0 and freq_freqs[2-b] > 0:
-                best_hand_type = max(best_hand_type, HandType.FullHouse)
-            elif freq_freqs[3-a] > 0:
-                best_hand_type = max(best_hand_type, HandType.ThreeOfAKind)
-            elif freq_freqs[2-a] > 1:
-                best_hand_type = max(best_hand_type, HandType.TwoPair)
-            elif freq_freqs[2-a] > 0:
-                best_hand_type = max(best_hand_type, HandType.OnePair)
-        return best_hand_type
+        if freq_freqs[5-j] > 0:
+            return HandType.FiveOfAKind
+        elif freq_freqs[4-j] > 0:
+            return HandType.FourOfAKind
+        elif freq_freqs[3-j] > 0 and freq_freqs[2] > 0:
+            return HandType.FullHouse
+        elif freq_freqs[3] > 0 and freq_freqs[2-j] > 0:
+            return HandType.FullHouse
+        elif freq_freqs[3-j] > 0:
+            return HandType.ThreeOfAKind
+        elif freq_freqs[2-j] > 1:
+            return HandType.TwoPair
+        elif freq_freqs[2-j] > 0:
+            return HandType.OnePair
 
     card_freqs = collections.Counter(cards)
     freq_freqs = collections.Counter(card_freqs.values())
@@ -177,8 +176,11 @@ def main():
     hands_with_jokers = [Hand(h.cards, h.bid, True) for h in hands]
     soln_b = solve(hands_with_jokers)
     print('The total winnings with wild jokers are', soln_b)
-
     pyperclip.copy(str(soln_b))
+
+    # hands_with_jokers.sort()
+    # for hand in hands_with_jokers:
+    #     print(hand)
 
 
 
