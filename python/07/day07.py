@@ -3,9 +3,6 @@ Advent of Code
 Day 7
 Camel Cards
 jramaswami
-
-249291819 is too low
-249293245 is too low
 """
 
 
@@ -28,27 +25,15 @@ class HandType(enum.IntEnum):
     FiveOfAKind = 7,
 
 
-def compute_hand_type(cards, with_jokers=False):
-    if with_jokers:
-        card_freqs = collections.Counter(cards)
-        j = card_freqs['J']
-        card_freqs['J'] = 0
-        freq_freqs = collections.Counter(card_freqs.values())
-        if freq_freqs[5-j] > 0:
-            return HandType.FiveOfAKind
-        elif freq_freqs[4-j] > 0:
-            return HandType.FourOfAKind
-        elif freq_freqs[3-j] > 0 and freq_freqs[2] > 0:
-            return HandType.FullHouse
-        elif freq_freqs[3] > 0 and freq_freqs[2-j] > 0:
-            return HandType.FullHouse
-        elif freq_freqs[3-j] > 0:
-            return HandType.ThreeOfAKind
-        elif freq_freqs[2-j] > 1:
-            return HandType.TwoPair
-        elif freq_freqs[2-j] > 0:
-            return HandType.OnePair
+def compute_hand_type_with_jokers(cards):
+    best_hand_type = HandType.HighCard
+    for joker_becomes in CARD_ORDER_WITH_JOKERS:
+        cards0 = cards.replace('J', joker_becomes)
+        best_hand_type = max(best_hand_type, compute_hand_type(cards0))
+    return best_hand_type
 
+
+def compute_hand_type(cards):
     card_freqs = collections.Counter(cards)
     freq_freqs = collections.Counter(card_freqs.values())
     if freq_freqs[5] > 0:
@@ -66,7 +51,6 @@ def compute_hand_type(cards, with_jokers=False):
     return HandType.HighCard
 
 
-
 def test_compute_hand_type():
     assert compute_hand_type('AAAAA') == HandType.FiveOfAKind
     assert compute_hand_type('AA8AA') == HandType.FourOfAKind
@@ -76,19 +60,25 @@ def test_compute_hand_type():
     assert compute_hand_type('A234A') == HandType.OnePair
     assert compute_hand_type('23456') == HandType.HighCard
 
-    assert compute_hand_type('QJJQ2', True) == HandType.FourOfAKind
-    assert compute_hand_type('32T3K', True) == HandType.OnePair
-    assert compute_hand_type('KK677', True) == HandType.TwoPair
-    assert compute_hand_type('T55J5', True) == HandType.FourOfAKind
-    assert compute_hand_type('KTJJT', True) == HandType.FourOfAKind
-    assert compute_hand_type('QQQJA', True) == HandType.FourOfAKind
+
+def test_compute_hand_type_with_jokers():
+    assert compute_hand_type_with_jokers('QJJQ2') == HandType.FourOfAKind
+    assert compute_hand_type_with_jokers('32T3K') == HandType.OnePair
+    assert compute_hand_type_with_jokers('KK677') == HandType.TwoPair
+    assert compute_hand_type_with_jokers('T55J5') == HandType.FourOfAKind
+    assert compute_hand_type_with_jokers('KTJJT') == HandType.FourOfAKind
+    assert compute_hand_type_with_jokers('QQQJA') == HandType.FourOfAKind
 
 
 @functools.total_ordering
 class Hand:
     def __init__(self, cards, bid=0, with_jokers=False):
         self.cards = cards
-        self.hand_type = compute_hand_type(cards, with_jokers)
+        if with_jokers:
+            self.hand_type = compute_hand_type_with_jokers(cards)
+        else:
+            self.hand_type = compute_hand_type(cards)
+
         self.bid = bid
         card_order = CARD_ORDER
         if with_jokers:
@@ -172,16 +162,12 @@ def main():
     hands = parse_input(lines)
     soln_a = solve(hands)
     print('The total winnings are', soln_a)
-    # assert soln_a == 251058093
+    assert soln_a == 251058093
     hands_with_jokers = [Hand(h.cards, h.bid, True) for h in hands]
     soln_b = solve(hands_with_jokers)
     print('The total winnings with wild jokers are', soln_b)
+    assert soln_b == 249781879
     pyperclip.copy(str(soln_b))
-
-    # hands_with_jokers.sort()
-    # for hand in hands_with_jokers:
-    #     print(hand)
-
 
 
 if __name__ == '__main__':
