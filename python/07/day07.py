@@ -3,8 +3,6 @@ Advent of Code
 Day 7
 Camel Cards
 jramaswami
-
-251647056 is too high
 """
 
 
@@ -56,9 +54,11 @@ def test_compute_hand_type():
 
 @functools.total_ordering
 class Hand:
-    def __init__(self, cards):
+    def __init__(self, cards, bid=0):
         self.cards = cards
         self.hand_type = compute_hand_type(cards)
+        self.bid = bid
+        self.values = [CARD_ORDER.find(c) for c in self.cards]
 
     def __eq__(self, other):
         return self.cards == other.cards
@@ -67,20 +67,24 @@ class Hand:
         if self.hand_type < other.hand_type:
             return True
         if self.hand_type == other.hand_type:
-            for my_card, other_card in zip(self.cards, other.cards):
-                if CARD_ORDER.find(my_card) < CARD_ORDER.find(other_card):
+            for a, b in zip(self.values, other.values):
+                if a < b:
                     return True
+                if a > b:
+                    return False
 
         return False
 
     def __repr__(self):
-        return f'Hand({self.cards}, {self.hand_type.name})'
+        return f'Hand({self.cards}, {self.bid}, {self.hand_type.name} {self.values})'
 
 
 def test_rank_hand():
     assert Hand('2AAAA') < Hand('33332')
     assert Hand('77788') < Hand('77888')
     assert Hand('KTJJT') < Hand('KK677')
+    assert Hand('9K328') < Hand('A6852')
+
 
 
 def test_sorting():
@@ -89,28 +93,31 @@ def test_sorting():
     hands.sort()
     assert hands == expected
 
+    hands = [Hand('A6852'), Hand('9K328')]
+    expected = [Hand('9K328'), Hand('A6852')]
+    hands.sort()
+    assert hands == expected
 
-def solve_a(hands, bids):
+
+def solve_a(hands):
     soln = 0
-    for i, (h, b) in enumerate(sorted((h, b) for h, b in zip(hands, bids)), start=1):
-        soln += (i * b)
+    hands.sort()
+    for i, h in enumerate(hands, start=1):
+        soln += (i * h.bid)
     return soln
 
 
 def test_solve_a():
-    hands = [Hand(c) for c in ['32T3K', 'T55J5', 'KK677', 'KTJJT', 'QQQJA']]
-    bids = [765, 684, 28, 220, 483]
-    assert solve_a(hands, bids) == 6440
+    hands = [Hand(c, b) for c, b in [('32T3K', 765), ('T55J5', 684), ('KK677', 28), ('KTJJT', 220), ('QQQJA', 483)]]
+    assert solve_a(hands) == 6440
 
 
 def parse_input(lines):
     hands = []
-    bids = []
     for line in lines:
         cards, bid = line.split()
-        hands.append(Hand(cards.strip()))
-        bids.append(int(bid.strip()))
-    return hands, bids
+        hands.append(Hand(cards.strip(), int(bid.strip())))
+    return hands
 
 
 def main():
@@ -118,9 +125,10 @@ def main():
     import sys
     import pyperclip
     lines = sys.stdin.readlines()
-    hands, bids = parse_input(lines)
-    soln_a = solve_a(hands, bids)
+    hands = parse_input(lines)
+    soln_a = solve_a(hands)
     print('The total winnings are', soln_a)
+    assert soln_a == 251058093
     pyperclip.copy(str(soln_a))
 
 
