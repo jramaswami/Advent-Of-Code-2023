@@ -7,6 +7,7 @@ jramaswami
 
 
 import collections
+import math
 
 
 Neighbors = collections.namedtuple('Neighbors', ['left', 'right'])
@@ -58,23 +59,24 @@ def test_solve_a_llr():
 
 
 def solve_b(instructions, graph):
-    # Find all nodes that end in 'A'
-    curr_queue = [n for n in graph if n.endswith('A')]
-    next_queue = []
-    steps = 0
-    i = 0
-    while not all(n.endswith('Z') for n in curr_queue):
-        print(curr_queue)
-        for node in curr_queue:
+    def steps_to_end_with_z(curr):
+        steps = 0
+        i = 0
+        while not curr.endswith('Z'):
+            steps += 1
             if instructions[i] == 'L':
-                next_queue.append(graph[node].left)
+                curr = graph[curr].left
             else:
-                next_queue.append(graph[node].right)
-        curr_queue, next_queue = next_queue, []
-        steps += 1
-        i += 1
-        i %= len(instructions)
-    return steps
+                curr = graph[curr].right
+            i += 1
+            i %= len(instructions)
+        return steps
+
+    # Find all nodes that end in 'A'
+    roots = [n for n in graph if n.endswith('A')]
+    steps = [steps_to_end_with_z(n) for n in roots]
+    soln = math.lcm(*steps)
+    return soln
 
 
 def test_solve_b_():
@@ -101,6 +103,7 @@ def main():
         soln_b,
         'steps to reach all nodes ending in Z'
     )
+    assert soln_b == 16342438708751
     pyperclip.copy(soln_b)
 
 
