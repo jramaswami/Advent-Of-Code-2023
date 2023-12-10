@@ -3,13 +3,10 @@ Advent of Code
 Day 10
 Pipe Maze
 jramaswami
-
-6784 is too low
 """
 
 
 import collections
-import math
 
 
 def read_input(path):
@@ -32,28 +29,31 @@ class Posn:
     def __repr__(self):
         return f'Posn({self.r}, {self.c})'
 
+    def __eq__(self, other):
+        return self.r == other.r and self.c == other.c
 
-UP = Posn(-1, 0)
-DOWN = Posn(1, 0)
-RIGHT = Posn(0, 1)
-LEFT = Posn(0, -1)
+
+NORTH = Posn(-1, 0)
+SOUTH = Posn(1, 0)
+EAST = Posn(0, 1)
+WEST = Posn(0, -1)
 
 
 def get_neighbors(posn, pipe):
     if pipe == '|':
-        return [posn + UP, posn + DOWN]
+        return [posn + NORTH, posn + SOUTH]
     if pipe == '-':
-        return [posn + LEFT, posn + RIGHT]
+        return [posn + EAST, posn + WEST]
     if pipe == 'L':
-        return [posn + UP, posn + RIGHT]
+        return [posn + NORTH, posn + EAST]
     if pipe == 'J':
-        return [posn + UP, posn + LEFT]
+        return [posn + NORTH, posn + WEST]
     if pipe == '7':
-        return [posn + LEFT, posn + DOWN]
+        return [posn + SOUTH, posn + WEST]
     if pipe == 'F':
-        return [posn + DOWN, posn + RIGHT]
+        return [posn + SOUTH, posn + EAST]
     if pipe == 'S':
-        return [posn + p for p in (UP, DOWN, LEFT, RIGHT)]
+        return [posn + p for p in (NORTH, SOUTH, WEST, EAST)]
     return []
 
 
@@ -71,9 +71,15 @@ def find_start(lines):
 
 def solve_a(grid):
     dist = [['.' for _ in row] for row in grid]
+    queue = collections.deque()
     start = find_start(grid)
     dist[start.r][start.c] = 0
-    queue = collections.deque([start])
+    # Determine start neighbors, that is pipes connected to start
+    for p in (start + dirn for dirn in (NORTH, SOUTH, EAST, WEST)):
+        p_connects_to = get_neighbors(p, grid[p.r][p.c])
+        if start in p_connects_to:
+            dist[p.r][p.c] = 1
+            queue.append(p)
     while queue:
         p = queue.popleft()
         for p0 in get_neighbors(p, grid[p.r][p.c]):
@@ -101,6 +107,7 @@ def main():
     grid = read_input('../../data/10/input10.txt')
     soln_a = solve_a(grid)
     print('The distance to the farthest point is', soln_a)
+    assert soln_a == 6800
     pyperclip.copy(soln_a)
 
 
