@@ -12,7 +12,7 @@ def read_input(path):
     return grid
 
 
-def solve_a(grid):
+def solve(grid, expansion=2):
     soln_a = 0
 
     # Find location of all galaxies
@@ -41,31 +41,40 @@ def solve_a(grid):
             dist = 0
             r1, r2 = min(g1[0], g2[0]), max(g1[0], g2[0])
             dist += r2 - r1
-            ers = sum(1 for er in empty_rows if r1 <= er <= r2)
+            ers = sum(expansion - 1 for er in empty_rows if r1 <= er <= r2)
             dist += ers
             # Compute how many empty cols are crossed and add them distance.
             c1, c2 = min(g1[1], g2[1]), max(g1[1], g2[1])
             dist += c2 - c1
-            ecs = sum(1 for ec in empty_cols if c1 <= ec <= c2)
+            ecs = sum(expansion - 1 for ec in empty_cols if c1 <= ec <= c2)
             dist += ecs
             soln_a += dist
     return soln_a
 
 
-def test_solve_a():
+def test_solve():
     grid = read_input('../../data/11/test11a.txt')
-    soln_a = solve_a(grid)
+    soln_a = solve(grid)
     assert soln_a == 374
+
+    soln_a = solve(grid, 10)
+    assert soln_a == 1030
+
+    soln_a = solve(grid, 100)
+    assert soln_a == 8410
 
 
 def main():
     "Main program"
     import pyperclip
     grid = read_input('../../data/11/input11.txt')
-    soln_a = solve_a(grid)
+    soln_a = solve(grid)
     print('The sum of the lengths is', soln_a)
     assert soln_a == 9648398
     pyperclip.copy(str(soln_a))
+    soln_b = solve(grid, 1000000)
+    print('The sum of the lengths with expansion', 1000000, 'is', soln_b)
+    pyperclip.copy(str(soln_b))
 
 
 if __name__ == '__main__':
