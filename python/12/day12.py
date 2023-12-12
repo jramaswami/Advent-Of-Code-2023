@@ -125,28 +125,15 @@ def count_arrangements_rec(record):
 
 def can_start_run(g, r, grid, rle):
     "Return true if run r and start at grid[g]"
-    # print('can_start_run', g, r)
-    # Current cell has to be a ? or a #
-    if grid[g] == '.':
-        # print('w')
-        return False
-    # Previous cell has to have no spring on it.
-    if g >= 0 and grid[g] == '#':
-        # print('x')
-        return False
-    # All the cells of the run have to be a ? or a #
-    if any(x == '.' for x in grid[g:g+rle[r]]):
-        # print('y')
-        return False
-    # Cell after run has to be a . or a ?
-    if g+rle[r] < len(grid) and grid[g+rle[r]] == '#':
-        # print('z')
-        return False
-    # This must fit inside the grid
-    if g+rle[r] > len(grid):
-        return False
-    return True
-
+    rl = rle[r]
+    return  (
+        # Run must fit inside grid
+        g+rl <= len(grid) and
+        # All cells in the run must be ? or #
+        all(c in '#?' for c in grid[g:g+rl]) and
+        # The next cell must be the end or a .
+        (g + rl == len(grid) or grid[g+rl] == '.')
+    )
 
 def count_arrangements_dp(record):
     grid, rle = record
@@ -154,27 +141,41 @@ def count_arrangements_dp(record):
     # dp[g][r]
     dp = [[0 for _ in range(len(rle)+1)] for _ in range(len(grid)+1)]
     dp[0][0] = 1
-    for g, _ in enumerate(grid):
-        for r, _ in enumerate(rle):
-            # If cell is ?, you may start run
-            if grid[r] == '?':
+    for g, cell in enumerate(grid):
+        for r in range(len(rle)+1):
+            if dp[g][r] == 0:
+                continue
+            # What am I standing on?
+            if cell == '?':
+                # Are there any runs left?
+                if r < len(rle):
+                    # I can start a run here if all the cells in the run
+                    # are ? or #
+                    rl = rle[r]
+                    if can_start_run(g, r, grid, rle):
+                        print(f'{g=} {r=} {cell=} {dp[g][r]=} to {g+rl=} {r+1=}')
+                        dp[g+rl+1][r+1] += dp[g][r]
+                # I can just step forward
                 dp[g+1][r] += dp[g][r]
-                if can_start_run(g, r, grid, rle):
-                    dp[g+rle[r]][r+1] += dp[g][r]
-            # If cell is #, you must start run
-            elif grid[r] == '#':
-                if can_start_run(g, r, grid, rle):
-                    dp[g+rle[r]][r+1] += dp[g][r]
-            # If cell is ., you must move to next cell
-            else:
+                print(f'{g=} {r=} {cell=} {dp[g][r]=} to {g+1=} {r=}')
+            elif cell == '#':
+                # I *must* use a run!
+                # Are there any runs left?
+                if r < len(rle):
+                    # I can start a run here if all the cells in the run
+                    # are ? or #
+                    rl = rle[r]
+                    if can_start_run(g, r, grid, rle):
+                        dp[g+rl+1][r+1] += dp[g][r]
+                        print(f'{g=} {r=} {cell=} {dp[g][r]=} to {g+rl=} {r+1=}')
+            elif cell == '.':
+                # I must step forward!
                 dp[g+1][r] += dp[g][r]
-        # If there are no runs left, we can advance if the cell is not a #
-        if grid[g] != '#':
-            dp[g+1][-1] += dp[g][-1]
+                print(f'{g=} {r=} {cell=} {dp[g][r]=} to {g+1=} {r=}')
 
-
-    for row in dp:
-        print(row)
+    for i, row in enumerate(dp):
+        cell = grid[i] if i < len(grid) else '-'
+        print(cell, row)
     return dp[-1][-1]
 
 
@@ -185,7 +186,8 @@ def test_count_arrangements_dp():
     # assert result == expected
     # assert count_arrangements_dp(('?', (1,))) == 1
     # assert count_arrangements_dp(('?.?', (1,))) == 2
-    assert count_arrangements_dp(records[0]) == 1
+    # assert count_arrangements_dp(records[0]) == 1
+    assert count_arrangements_dp(records[1]) == 4
 
 
 def main():
