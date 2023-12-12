@@ -142,6 +142,9 @@ def can_start_run(g, r, grid, rle):
     if g+rle[r] < len(grid) and grid[g+rle[r]] == '#':
         # print('z')
         return False
+    # This must fit inside the grid
+    if g+rle[r] > len(grid):
+        return False
     return True
 
 
@@ -153,11 +156,22 @@ def count_arrangements_dp(record):
     dp[0][0] = 1
     for g, _ in enumerate(grid):
         for r, _ in enumerate(rle):
-            # If grid is a question mark or a
-            if g+rle[r] <= len(grid) and can_start_run(g, r, grid, rle):
-                dp[g+rle[r]][r+1] += dp[g][r]
+            # If cell is ?, you may start run
+            if grid[r] == '?':
+                dp[g+1][r] += dp[g][r]
+                if can_start_run(g, r, grid, rle):
+                    dp[g+rle[r]][r+1] += dp[g][r]
+            # If cell is #, you must start run
+            elif grid[r] == '#':
+                if can_start_run(g, r, grid, rle):
+                    dp[g+rle[r]][r+1] += dp[g][r]
+            # If cell is ., you must move to next cell
+            else:
+                dp[g+1][r] += dp[g][r]
+        # If there are no runs left, we can advance if the cell is not a #
+        if grid[g] != '#':
+            dp[g+1][-1] += dp[g][-1]
 
-            dp[g+1][r] += dp[g][r]
 
     for row in dp:
         print(row)
@@ -169,9 +183,9 @@ def test_count_arrangements_dp():
     # expected = [1, 4, 1, 1, 4, 10]
     # result = [count_arrangements_dp(r) for r in records]
     # assert result == expected
-    assert count_arrangements_dp(('?', (1,))) == 1
-    assert count_arrangements_dp(('?.?', (1,))) == 2
-    # assert count_arrangements_dp(records[0]) == 1
+    # assert count_arrangements_dp(('?', (1,))) == 1
+    # assert count_arrangements_dp(('?.?', (1,))) == 2
+    assert count_arrangements_dp(records[0]) == 1
 
 
 def main():
