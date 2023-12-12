@@ -97,6 +97,62 @@ def test_solve_a():
     result = solve_a(records)
     assert result == expected
 
+
+def count_arrangements_dp(record):
+    grid, rle = record
+
+    def can_start_run(g, r):
+        "Return true if run r and start at grid[g]"
+        # print('can_start_run', g, r)
+        # Current cell has to be a ? or a #
+        if grid[g] == '.':
+            # print('w')
+            return False
+        # Previous cell has to have no spring on it.
+        if g >= 0 and grid[g] == '#':
+            # print('x')
+            return False
+        # All the cells of the run have to be a ? or a #
+        if any(x == '.' for x in grid[g:g+rle[r]]):
+            # print('y')
+            return False
+        # Cell after run has to be a . or a ?
+        if g+rle[r] < len(grid) and grid[g+rle[r]] == '#':
+            # print('z')
+            return False
+        return True
+
+    def rec(g, r):
+        # print('rec', g, r)
+        if g >= len(grid) and r >= len(rle):
+            print(g, r, 'xxx')
+            return 1
+
+        if g >= len(grid) or r >= len(rle):
+            print('yyy')
+            return 0
+
+        s = rec(g+1, r)
+        t = 0
+        if can_start_run(g, r):
+            # print('g', g, 'r', r, 'can start moving to', g+rle[r]+1)
+            t = rec(g+rle[r]+1, r+1)
+        print('->', g, r, s, t, s+t)
+        return s + t
+
+    return rec(0, 0)
+
+
+def test_count_arrangements_dp():
+    records = read_input('../../data/12/test12a.txt')
+    # expected = [1, 4, 1, 1, 4, 10]
+    # result = [count_arrangements_dp(r) for r in records]
+    # assert result == expected
+    assert count_arrangements_dp(('?', (1,))) == 1
+    assert count_arrangements_dp(('?.?', (1,))) == 2
+    # assert count_arrangements_dp(records[0]) == 1
+
+
 def main():
     "Main program"
     import pyperclip
