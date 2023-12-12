@@ -98,29 +98,9 @@ def test_solve_a():
     assert result == expected
 
 
-def count_arrangements_dp(record):
+def count_arrangements_rec(record):
     grid, rle = record
 
-    def can_start_run(g, r):
-        "Return true if run r and start at grid[g]"
-        # print('can_start_run', g, r)
-        # Current cell has to be a ? or a #
-        if grid[g] == '.':
-            # print('w')
-            return False
-        # Previous cell has to have no spring on it.
-        if g >= 0 and grid[g] == '#':
-            # print('x')
-            return False
-        # All the cells of the run have to be a ? or a #
-        if any(x == '.' for x in grid[g:g+rle[r]]):
-            # print('y')
-            return False
-        # Cell after run has to be a . or a ?
-        if g+rle[r] < len(grid) and grid[g+rle[r]] == '#':
-            # print('z')
-            return False
-        return True
 
     def rec(g, r):
         # print('rec', g, r)
@@ -141,6 +121,47 @@ def count_arrangements_dp(record):
         return s + t
 
     return rec(0, 0)
+
+
+def can_start_run(g, r, grid, rle):
+    "Return true if run r and start at grid[g]"
+    # print('can_start_run', g, r)
+    # Current cell has to be a ? or a #
+    if grid[g] == '.':
+        # print('w')
+        return False
+    # Previous cell has to have no spring on it.
+    if g >= 0 and grid[g] == '#':
+        # print('x')
+        return False
+    # All the cells of the run have to be a ? or a #
+    if any(x == '.' for x in grid[g:g+rle[r]]):
+        # print('y')
+        return False
+    # Cell after run has to be a . or a ?
+    if g+rle[r] < len(grid) and grid[g+rle[r]] == '#':
+        # print('z')
+        return False
+    return True
+
+
+def count_arrangements_dp(record):
+    grid, rle = record
+
+    # dp[g][r]
+    dp = [[0 for _ in range(len(rle)+1)] for _ in range(len(grid)+1)]
+    dp[0][0] = 1
+    for g, _ in enumerate(grid):
+        for r, _ in enumerate(rle):
+            # If grid is a question mark or a
+            if g+rle[r] <= len(grid) and can_start_run(g, r, grid, rle):
+                dp[g+rle[r]][r+1] += dp[g][r]
+
+            dp[g+1][r] += dp[g][r]
+
+    for row in dp:
+        print(row)
+    return dp[-1][-1]
 
 
 def test_count_arrangements_dp():
