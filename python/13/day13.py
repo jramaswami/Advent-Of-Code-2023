@@ -3,8 +3,6 @@ Advent of Code
 Day 13
 Point of Incidence
 jramaswami
-
-22255 is too low
 """
 
 
@@ -26,7 +24,6 @@ def read_input(path):
 def test_read_input():
     grids = read_input('../../data/13/test13a.txt')
     assert len(grids) == 2
-
 
 
 def has_mirror_at(c, row):
@@ -102,45 +99,65 @@ def test_solve_a():
     assert solve_a(grids) == expected
 
 
+def find_mirror_b(grid):
+    "Return list of all possible reflection points in grid"
+    result = []
+    for c, _ in enumerate(grid[0][1:], start=1):
+        if all(has_mirror_at(c, row) for row in grid):
+            result.append(c)
+    return result
+
+
 def fix_smudge(grid):
-    # Fix smudge
+    # Find original row/col
+    rs0, cs0 = find_mirror(rotate_grid(grid)), find_mirror(grid)
+
+    # Transform into list of list of chars to make it mutable
     grid = [[c for c in row] for row in grid]
 
-    # Find original row/col
-    result = []
-    result.append((find_mirror(grid), find_mirror(rotate_grid(grid))))
-    # Find all smudge fixes
+    # For every possible smudge find any reflection points that are different
+    # than the original reflection point
+    rs1, cs1 = -1, -1
     for r, row in enumerate(grid):
         for c, _ in enumerate(row):
-            rs, cs = 0, 0
+
             # Swap the character here
             if grid[r][c] == '.':
                 grid[r][c] = '#'
             else:
                 grid[r][c] = '.'
-            result.append((find_mirror(grid), find_mirror(rotate_grid(grid))))
+
+            grid_t = rotate_grid(grid)
+            for rs_ in find_mirror_b(grid_t):
+                if rs_ > 0 and rs_ != rs0:
+                    rs1 = rs_
+            if rs1 == -1:
+                for cs_ in find_mirror_b(grid):
+                    if cs_ > 0 and cs_ != cs0:
+                        cs1 = cs_
+
             # Swap the character back
             if grid[r][c] == '.':
                 grid[r][c] = '#'
             else:
                 grid[r][c] = '.'
-    return result
+
+            if rs1 > 0 or cs1 > 0:
+                break
+
+    return rs1, cs1
 
 
 def solve_b(grids):
     rs, cs = 0, 0
-    for grid in grids:
+    for g, grid in enumerate(grids):
         result = fix_smudge(grid)
         # Original result is first item
-        cs0, rs0 = result[0]
-        for cs_, rs_ in result[1:]:
-            if rs_ > 0 or cs_ > 0:
-                if rs_ > 0 and rs_ != rs0:
-                    rs += rs_
-                    break
-                if cs_ > 0 and cs_ != cs0:
-                    cs += cs_
-                    break
+        rs1, cs1 = fix_smudge(grid)
+        if rs1 == -1 and cs1 == -1:
+            print('NOT OK')
+        rs += max(0, rs1)
+        cs += max(0, cs1)
     return (100 * rs) + cs
 
 
@@ -159,6 +176,7 @@ def main():
     assert soln_a == 37113
     soln_b = solve_b(grids)
     print('The summary number with new reflection lines is', soln_b)
+    assert soln_b == 30449
     pyperclip.copy(str(soln_b))
 
 
