@@ -19,6 +19,12 @@ Beam = collections.namedtuple('Beam', ['posn', 'dirn'])
 EAST, SOUTH, WEST, NORTH = (Vector(0, 1),  Vector(1, 0), Vector(0, -1), Vector(-1, 0))
 
 
+def read_input(path):
+    with open(path, 'r') as infile:
+        grid = [line.strip() for line in infile]
+    return grid
+
+
 def next_positions(beam, grid):
     cell = grid[beam.posn.row][beam.posn.col]
     if cell == '.':
@@ -84,11 +90,10 @@ def inbounds(beam, grid):
     )
 
 
-def get_energized(grid):
+def get_energized(grid, init_beam):
     energized = [[False for _ in row] for row in grid]
     queue = collections.deque()
-    energized[0][0] = True
-    init_beam = Beam(Vector(0,0), EAST)
+    energized[init_beam.posn.row][init_beam.posn.col] = True
     visited = set()
     visited.add(init_beam)
     queue.append(init_beam)
@@ -105,19 +110,16 @@ def get_energized(grid):
 
 def test_get_energized():
     grid = read_input('../../data/16/test16a.txt')
-    result = get_energized(grid)
-
+    result = get_energized(grid, Beam(Vector(0,0), EAST))
     sample = read_input('../../data/16/result16a.txt')
     expected = [[True if t == '#' else False for t in row] for row in sample]
-
-    for row in result:
-        print(''.join('#' if t else '.' for t in row))
     assert result == expected
 
 
-def solve_a(grid):
-    energized = get_energized(grid)
-    return sum(sum(row) for row in energized)
+def solve_a(grid, init_beam=Beam(Vector(0,0), EAST)):
+    energized = get_energized(grid, init_beam)
+    result = sum(sum(row) for row in energized)
+    return result
 
 
 def test_solve_a():
@@ -126,10 +128,25 @@ def test_solve_a():
     assert result == 46
 
 
-def read_input(path):
-    with open(path, 'r') as infile:
-        grid = [line.strip() for line in infile]
-    return grid
+def solve_b(grid):
+    soln_b = 0
+    for c, _ in enumerate(grid[0]):
+        # Top row heads south
+        soln_b = max(soln_b, solve_a(grid, Beam(Vector(0, c), SOUTH)))
+        # Bottom row heads north
+        soln_b = max(soln_b, solve_a(grid, Beam(Vector(len(grid)-1, c), NORTH)))
+    for r, _ in enumerate(grid):
+        # Left col heads east
+        soln_b = max(soln_b, solve_a(grid, Beam(Vector(r, 0), EAST)))
+        # Right col head west
+        soln_b = max(soln_b, solve_a(grid, Beam(Vector(r, len(grid[0])-1), WEST)))
+    return soln_b
+
+
+def test_solve_b():
+    grid = read_input('../../data/16/test16a.txt')
+    result = solve_b(grid)
+    assert result == 51
 
 
 def main():
@@ -139,7 +156,9 @@ def main():
     soln_a = solve_a(grid)
     print(soln_a, 'tiles end up begin energized')
     assert soln_a == 8539
-    pyperclip.copy(str(soln_a))
+    soln_b = solve_b(grid)
+    print('The maximum possible number of energized tiles is', soln_b)
+    pyperclip.copy(str(soln_b))
 
 
 if __name__ == '__main__':
