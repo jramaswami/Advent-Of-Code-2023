@@ -54,41 +54,78 @@ def neighbors(crucible, grid):
             yield crucible0
 
 
-def solve_a(grid):
+def ultimate_neighbors(crucible, grid):
+    if crucible.dirn and crucible.consecutive_blocks < 4:
+        # Once an ultra crucible starts moving in a direction, it needs
+        # to move a minimum of four blocks
+        crucible0 = Crucible(crucible.posn + crucible.dirn, crucible.dirn, crucible.consecutive_blocks+1)
+        if inbounds(crucible0, grid):
+            yield crucible0
+    else:
+        for dirn in DIRECTIONS:
+            # Cannot go in reverse
+            if crucible.dirn and dirn == crucible.dirn.reverse():
+                continue
+            if dirn == crucible.dirn:
+                crucible0 = Crucible(crucible.posn + dirn, dirn, crucible.consecutive_blocks+1)
+            else:
+                crucible0 = Crucible(crucible.posn + dirn, dirn, 1)
+            if inbounds(crucible0, grid) and crucible0.consecutive_blocks <= 10:
+                # An ultra crucible can move a maximum of ten consecutive
+                # blocks without turning
+                yield crucible0
+
+
+def solve(grid, neighborsfn=neighbors):
     cache = collections.defaultdict(lambda: math.inf)
     init_crucible = Crucible(Vector(0, 0), None, 0)
     target_posn = Vector(len(grid)-1, len(grid[-1])-1)
     cache[init_crucible] = 0
     queue = collections.deque()
     queue.append(QItem(0, init_crucible))
-    soln_a = math.inf
+    soln = math.inf
     while queue:
         item = queue.popleft()
         if cache[item.crucible] != item.heat_loss:
             continue
         if item.crucible.posn == target_posn:
-            soln_a = min(soln_a, item.heat_loss)
-        for crucible0 in neighbors(item.crucible, grid):
+            if neighborsfn == ultimate_neighbors:
+                if item.crucible.consecutive_blocks >= 4:
+                    # An ultimate crucible cannot stop on the last block
+                    # until it has gone at least 4 consecutive blocks
+                    soln = min(soln, item.heat_loss)
+            else:
+                soln = min(soln, item.heat_loss)
+        for crucible0 in neighborsfn(item.crucible, grid):
             heat_loss0 = item.heat_loss + grid[crucible0.posn.row][crucible0.posn.col]
             if heat_loss0 < cache[crucible0]:
                 cache[crucible0] = heat_loss0
                 queue.append(QItem(heat_loss0, crucible0))
-    return soln_a
+    return soln
 
 
 def test_solve_a():
     grid = read_input('../../data/17/test17a.txt')
-    assert solve_a(grid) == 102
+    assert solve(grid) == 102
 
+
+def test_solve_b():
+    grid = read_input('../../data/17/test17a.txt')
+    assert solve(grid, ultimate_neighbors) == 94
+
+    grid = read_input('../../data/17/test17b.txt')
+    assert solve(grid, ultimate_neighbors) == 71
 
 def main():
     "Main program"
     import pyperclip
     grid = read_input('../../data/17/input17.txt')
-    soln_a = solve_a(grid)
+    soln_a = solve(grid)
     print('The minimum heatloss is', soln_a)
     assert soln_a == 963
-    pyperclip.copy(str(soln_a))
+    soln_b = solve(grid, ultimate_neighbors)
+    print('The minimum heatloss of an ultimate crucible is', soln_b)
+    pyperclip.copy(str(soln_b))
 
 
 if __name__ == '__main__':
