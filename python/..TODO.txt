@@ -1,0 +1,19 @@
+Day 10:
+    Loop, so replace S with right pipe
+    Start from the right and go until you find the first pipe.
+    Keep your "hand" on the inside wall.
+    Mark any open space on the other side of the inside wall as inside.
+    Flood fill inside if necessary.
+
+Day 12:
+    Convert do DP
+    Use three dimensional array dp[grid index][run lengths index][starting/finishing]
+
+Day 17:
+    Is it possible to add a filtering function around neighbors for the ulimate
+    crucible instead of making an entirely differnt function?  This would
+    help with the "hacky" addition of if statement to prevent stopping on the
+    last block.
+
+    Model the neighbors as turn or go forward min steps to max steps instead
+    of just a single step forward counting consecutive blocks
