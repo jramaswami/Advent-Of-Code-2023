@@ -7,7 +7,6 @@ jramaswami
 
 
 import collections
-import heapq
 import math
 
 
@@ -56,49 +55,25 @@ def neighbors(crucible, grid):
 
 
 def solve_a(grid):
+    cache = collections.defaultdict(lambda: math.inf)
+    init_crucible = Crucible(Vector(0, 0), None, 0)
+    target_posn = Vector(len(grid)-1, len(grid[-1])-1)
+    cache[init_crucible] = 0
+    queue = collections.deque()
+    queue.append(QItem(0, init_crucible))
     soln_a = math.inf
-    heat_loss_to_reach = [[math.inf for _ in row] for row in grid]
-    heat_loss_to_reach[0][0] = 0
-    queue = collections.deque([QItem(0, Crucible(Vector(0,0), None, 0))])
-
     while queue:
         item = queue.popleft()
-        if item.heat_loss > heat_loss_to_reach[item.crucible.posn.row][item.crucible.posn.col]:
+        if cache[item.crucible] != item.heat_loss:
             continue
-        for neighbor in neighbors(item.crucible, grid):
-            heat_loss0 = item.heat_loss + grid[neighbor.posn.row][neighbor.posn.col]
-            if heat_loss0 < heat_loss_to_reach[neighbor.posn.row][neighbor.posn.col]:
-                heat_loss_to_reach[neighbor.posn.row][neighbor.posn.col] = heat_loss0
-                queue.append(QItem(heat_loss0, neighbor))
-
-
-    with open('../../data/17/result17a.txt') as infile:
-        T = [line.strip() for line in infile]
-
-    for r, row in enumerate(heat_loss_to_reach):
-        for c, x in enumerate(row):
-            h = grid[r][c]
-            t = '.' if T[r][c].isdigit() else T[r][c]
-            print(f'{x:03}|{h}', end=' ')
-        print()
-
-    curr = Vector(0, 0)
-    visited = set()
-    visited.add(curr)
-    hl = 0
-    while curr != Vector(len(grid)-1, len(grid[-1])-1):
-        for d in DIRECTIONS:
-            x = curr + d
-            if x in visited:
-                continue
-            if x.row >= 0 and x.col >= 0 and x.row < len(grid) and x.col < len(grid[0]):
-                if not T[x.row][x.col].isdigit():
-                    hl += grid[x.row][x.col]
-                    curr = x
-                    visited.add(curr)
-                    print(x, hl, heat_loss_to_reach[x.row][x.col])
-                    break
-    print('ok')
+        if item.crucible.posn == target_posn:
+            soln_a = min(soln_a, item.heat_loss)
+        for crucible0 in neighbors(item.crucible, grid):
+            heat_loss0 = item.heat_loss + grid[crucible0.posn.row][crucible0.posn.col]
+            if heat_loss0 < cache[crucible0]:
+                cache[crucible0] = heat_loss0
+                queue.append(QItem(heat_loss0, crucible0))
+    return soln_a
 
 
 def test_solve_a():
@@ -109,9 +84,11 @@ def test_solve_a():
 def main():
     "Main program"
     import pyperclip
-    grid = read_input('../../data/17/test17a.txt')
+    grid = read_input('../../data/17/input17.txt')
     soln_a = solve_a(grid)
     print('The minimum heatloss is', soln_a)
+    assert soln_a == 963
+    pyperclip.copy(str(soln_a))
 
 
 if __name__ == '__main__':
