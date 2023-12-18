@@ -153,14 +153,46 @@ def solve(dig_instructions):
     curr_posn = Vector(0, 0)
     for dig in dig_instructions:
         next_posn = curr_posn + (dig.dirn * dig.meters)
+        left = min(curr_posn.col, next_posn.col)
+        right = max(curr_posn.col, next_posn.col)
+        print(f'{left=} {right=}')
         if curr_posn.row == next_posn.row:
-            # Horizontal instruction
-            if dig.dirn.col > 0:
-                # east
-                east[curr_posn.row] += dig.meters
+            if left < 0:
+                print('negative left', left)
+                # Need to possibly split the hz
+                # For the negative side, do the opposite for adding and subtracting
+                left0, right0 = left, min(right, -1)
+                delta0 = right0 - left0
+                if dig.dirn.col > 0:
+                    # east
+                    west[curr_posn.row] += delta0
+                else:
+                    # west
+                    east[curr_posn.row] += delta0
+
+                delta1 = 0
+                if right >= 0:
+                    left1, right1 = max(0, left), right
+                    # Horizontal instruction
+                    if dig.dirn.col > 0:
+                        # east
+                        east[curr_posn.row] += delta1
+                    else:
+                        # west
+                        west[curr_posn.row] += delta1
+                # assert right != 0
+                assert delta0 + delta1 == dig.meters
+
             else:
-                # west
-                west[curr_posn.row] += dig.meters
+                delta = right - left
+                assert delta == dig.meters
+                # Horizontal instruction
+                if dig.dirn.col > 0:
+                    # east
+                    east[curr_posn.row] += delta
+                else:
+                    # west
+                    west[curr_posn.row] += delta
             rows.add(curr_posn.row)
         curr_posn = next_posn
 
@@ -174,8 +206,6 @@ def solve(dig_instructions):
             curr_total += east[row]
             print('east', east[row])
         print(row, 'after adds', curr_total)
-        if curr_total < 0:
-            print('******************************* NEG ************************')
         volume += curr_total
         print('*****volume now', volume)
         # Subtract events
@@ -183,13 +213,50 @@ def solve(dig_instructions):
             print('west', west[row])
             curr_total -= west[row]
         print(row, 'after subs', curr_total)
+        assert curr_total >= 0
     print(volume)
     return volume
 
 
+def solvex(dig_instructions):
+    curr_posn = Vector(0, 0)
+    left_boundary = 0
+    for i, instruction in enumerate(dig_instructions):
+        next_posn = curr_posn + (instruction.dirn * instruction.meters)
+        left_boundary = min(next_posn.col, left_boundary)
+        curr_posn = next_posn
+    print('left boundary', left_boundary)
+
+    volume = 0
+    curr_posn = Vector(0, 0)
+    for i, instruction in enumerate(dig_instructions):
+        next_posn = curr_posn + (instruction.dirn * instruction.meters)
+        print(curr_posn, '->', next_posn)
+        if next_posn.row > curr_posn.row:
+            # Moving down, only include the middle part of the range
+            height = next_posn.row - curr_posn.row - 1
+            width = curr_posn.col - left_boundary + 1
+            box = height * width
+            volume += box
+            print('add', height, width, box)
+        elif next_posn.row < curr_posn.row:
+            # Moving up
+            height = curr_posn.row - next_posn.row - 1
+            width = curr_posn.col - left_boundary + 1
+            box = height * width
+            volume -= box
+            print('sub',height, width, box)
+        else:
+            # Moving horizontally, add all the cells.
+            print('add hz', instruction.meters+1)
+            volume += instruction.meters - 1
+        curr_posn = next_posn
+    return volume
+
+
 def test_solve_b():
-    dig_instructions = read_input('../../data/18/test18a.txt')
-    assert solve((dig_instructions)) == 62
+    # dig_instructions = read_input('../../data/18/test18a.txt')
+    # assert solve((dig_instructions)) == 62
     dig_instructions = read_input('../../data/18/input18.txt')
     assert solve((dig_instructions)) == 39194
 
@@ -205,7 +272,7 @@ def main():
     assert soln_a == 39194
     pyperclip.copy(str(soln_a))
 
-    soln_b = solve(dig_instructions)
+    soln_b = solvex(translate_dig_instructions(dig_instructions))
 
 if __name__ == '__main__':
     main()
