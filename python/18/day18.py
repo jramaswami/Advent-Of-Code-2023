@@ -111,6 +111,46 @@ def test_solve_a():
     assert solve_a(dig_instructions) == 62
 
 
+def decode_color(color):
+    meters = int(color[1:6], base=16)
+    dirn = 'RDLU'[int(color[-1])]
+    return dirn, meters
+
+
+def test_decode_color():
+    colors, expected = [], []
+    with open('../../data/18/test18b.txt', 'r') as infile:
+        for line in infile:
+            line = line.strip()
+            color, tokens = (t.strip() for t in line.split('='))
+            dirn, meters = tokens.split()
+            meters = int(meters)
+            colors.append(color)
+            expected.append((dirn, meters))
+
+    for color, exp in zip(colors, expected):
+        assert decode_color(color) == exp
+
+
+def translate_dig_instructions(dig_instructions):
+    dig_insructions0 = []
+    for dig in dig_instructions:
+        dirn, meters = decode_color(dig.color)
+        dig_insructions0.append(DigInstruction(DIRECTIONS[dirn], meters, dig.color))
+    return dig_insructions0
+
+
+def solve_b(dig_instructions):
+    dig_instructions0 = translate_dig_instructions(dig_instructions)
+    soln_b = solve_a(dig_instructions0)
+    return soln_b
+
+
+def test_solve_b():
+    dig_instructions = read_input('../../data/18/test18a.txt')
+    assert solve_b(dig_instructions) == 952408144115
+
+
 def main():
     "Main program"
     import pyperclip
