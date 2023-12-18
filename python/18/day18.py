@@ -3,6 +3,13 @@ Advent of Code
 Day 18
 Lavaduct Legoon
 jramaswami
+
+Got a hint about how to adjust the following formula:
+
+A = 1/2 * SUM[p_x - q_x) * (p_y + q_y)] for p,q in edges
+
+REF: https://cp-algorithms.com/geometry/area-of-simple-polygon.html
+REF: https://www.reddit.com/r/adventofcode/comments/18lj7wx/2023_day_18_how_do_you_adapt_the_shoelace_formula/
 """
 
 
@@ -31,86 +38,6 @@ def read_input(path):
             color = tokens[2][1:-1]
             dig_instructions.append(DigInstruction(dirn, meters, color))
     return dig_instructions
-
-
-def dig_trench(dig_instructions):
-    visited = set()
-    posn = Vector(0, 0)
-    visited.add(posn)
-    for i, instruction in enumerate(dig_instructions):
-        for _ in range(instruction.meters):
-            posn = posn + instruction.dirn
-            visited.add(posn)
-    return visited
-
-
-def test_dig_trench():
-    dig_instructions = read_input('../../data/18/test18a.txt')
-    trench = dig_trench(dig_instructions)
-    assert len(trench) == 38
-
-
-def get_corners(trench):
-    "Return the top left and bottom right corners of grid"
-    min_row, max_row = math.inf, -math.inf
-    min_col, max_col = math.inf, -math.inf
-    for posn in trench:
-        min_row, max_row = min(min_row, posn.row), max(max_row, posn.row)
-        min_col, max_col = min(min_col, posn.col), max(max_col, posn.col)
-    return Vector(min_row, min_col), Vector(max_row, max_col)
-
-
-def print_trench(trench):
-    grid = []
-    tl, br = get_corners(trench)
-    for r in range(tl.row, br.row+1):
-        grid_row = []
-        for c in range(tl.col, br.col+1):
-            if Vector(r,c) in trench:
-                grid_row.append('#')
-            else:
-                grid_row.append('.')
-        grid.append(''.join(grid_row))
-    print('\n'.join(grid))
-
-
-def trench_volume(trench):
-    # Fill from outside.
-    tl, br = get_corners(trench)
-    # Move corners outside trench grid
-    tl = tl + Vector(-1,-1)
-    br = br + Vector(1, 1)
-    volume = (br.row - tl.row + 1) * (br.col - tl.col + 1)
-    # Flood fill from outside
-    outside = set()
-    outside.add(tl)
-    queue = collections.deque()
-    queue.append(tl)
-    while queue:
-        curr = queue.popleft()
-        for dirn in DIRECTIONS.values():
-            neighbor = curr + dirn
-            if (tl.row <= neighbor.row <= br.row) and (tl.col <= neighbor.col <= br.col):
-                if neighbor in trench:
-                    continue
-                if neighbor not in outside:
-                    outside.add(neighbor)
-                    queue.append(neighbor)
-
-    volume -= len(outside)
-    return volume
-
-
-def solve_a(dig_instructions):
-    trench = dig_trench(dig_instructions)
-    # print_trench(trench)
-    soln_a = trench_volume(trench)
-    return soln_a
-
-
-def test_solve_a():
-    dig_instructions = read_input('../../data/18/test18a.txt')
-    assert solve_a(dig_instructions) == 62
 
 
 def decode_color(color):
@@ -142,137 +69,41 @@ def translate_dig_instructions(dig_instructions):
     return dig_insructions0
 
 
-Horizontal = collections.namedtuple('Horizontal', ['row', 'left', 'right', 'meters', 'dirn'])
-
-
 def solve(dig_instructions):
-    # Extract the horizontal lines.
-    east = collections.defaultdict(int)
-    west = collections.defaultdict(int)
-    rows = set()
-    curr_posn = Vector(0, 0)
-    for dig in dig_instructions:
-        next_posn = curr_posn + (dig.dirn * dig.meters)
-        left = min(curr_posn.col, next_posn.col)
-        right = max(curr_posn.col, next_posn.col)
-        print(f'{left=} {right=}')
-        if curr_posn.row == next_posn.row:
-            if left < 0:
-                print('negative left', left)
-                # Need to possibly split the hz
-                # For the negative side, do the opposite for adding and subtracting
-                left0, right0 = left, min(right, -1)
-                delta0 = right0 - left0
-                if dig.dirn.col > 0:
-                    # east
-                    west[curr_posn.row] += delta0
-                else:
-                    # west
-                    east[curr_posn.row] += delta0
-
-                delta1 = 0
-                if right >= 0:
-                    left1, right1 = max(0, left), right
-                    # Horizontal instruction
-                    if dig.dirn.col > 0:
-                        # east
-                        east[curr_posn.row] += delta1
-                    else:
-                        # west
-                        west[curr_posn.row] += delta1
-                # assert right != 0
-                assert delta0 + delta1 == dig.meters
-
-            else:
-                delta = right - left
-                assert delta == dig.meters
-                # Horizontal instruction
-                if dig.dirn.col > 0:
-                    # east
-                    east[curr_posn.row] += delta
-                else:
-                    # west
-                    west[curr_posn.row] += delta
-            rows.add(curr_posn.row)
-        curr_posn = next_posn
-
-
-    volume = 0
-    curr_total = 1
-    for row in range(min(rows), max(rows)+1):
-        print('row=', row)
-        # Add events
-        if row in east:
-            curr_total += east[row]
-            print('east', east[row])
-        print(row, 'after adds', curr_total)
-        volume += curr_total
-        print('*****volume now', volume)
-        # Subtract events
-        if row in west:
-            print('west', west[row])
-            curr_total -= west[row]
-        print(row, 'after subs', curr_total)
-        assert curr_total >= 0
-    print(volume)
-    return volume
-
-
-def solvex(dig_instructions):
-    curr_posn = Vector(0, 0)
-    left_boundary = 0
-    for i, instruction in enumerate(dig_instructions):
-        next_posn = curr_posn + (instruction.dirn * instruction.meters)
-        left_boundary = min(next_posn.col, left_boundary)
-        curr_posn = next_posn
-    print('left boundary', left_boundary)
-
     volume = 0
     curr_posn = Vector(0, 0)
+    perimeter = 0
+    adjustment = 1
     for i, instruction in enumerate(dig_instructions):
         next_posn = curr_posn + (instruction.dirn * instruction.meters)
-        print(curr_posn, '->', next_posn)
-        if next_posn.row > curr_posn.row:
-            # Moving down, only include the middle part of the range
-            height = next_posn.row - curr_posn.row - 1
-            width = curr_posn.col - left_boundary + 1
-            box = height * width
-            volume += box
-            print('add', height, width, box)
-        elif next_posn.row < curr_posn.row:
-            # Moving up
-            height = curr_posn.row - next_posn.row - 1
-            width = curr_posn.col - left_boundary + 1
-            box = height * width
-            volume -= box
-            print('sub',height, width, box)
-        else:
-            # Moving horizontally, add all the cells.
-            print('add hz', instruction.meters+1)
-            volume += instruction.meters - 1
+        if instruction.dirn.row < 0 or instruction.dirn.col < 0:
+            adjustment += instruction.meters
+        volume += (curr_posn.col - next_posn.col) * (curr_posn.row + next_posn.row)
+        perimeter += instruction.meters
         curr_posn = next_posn
-    return volume
+    return (volume // 2) + adjustment
 
 
 def test_solve_b():
-    # dig_instructions = read_input('../../data/18/test18a.txt')
-    # assert solve((dig_instructions)) == 62
+    dig_instructions = read_input('../../data/18/test18a.txt')
+    assert solve(dig_instructions) == 62
+    assert solve(translate_dig_instructions(dig_instructions)) == 952408144115
     dig_instructions = read_input('../../data/18/input18.txt')
-    assert solve((dig_instructions)) == 39194
-
+    assert solve(dig_instructions) == 39194
 
 
 def main():
     "Main program"
     import pyperclip
-    # dig_instructions = read_input('../../data/18/test18a.txt')
     dig_instructions = read_input('../../data/18/input18.txt')
-    soln_a = solve_a(dig_instructions)
+    soln_a = solve(dig_instructions)
     print('The volume of the trench is', soln_a)
     assert soln_a == 39194
     pyperclip.copy(str(soln_a))
+    soln_b = solve(translate_dig_instructions(dig_instructions))
+    print('The volume of the hexadecimal lagoon is', soln_b)
+    pyperclip.copy(str(soln_b))
 
-    soln_b = solvex(translate_dig_instructions(dig_instructions))
 
 if __name__ == '__main__':
     main()
