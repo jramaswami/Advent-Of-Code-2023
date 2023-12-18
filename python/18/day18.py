@@ -3,8 +3,6 @@ Advent of Code
 Day 18
 Lavaduct Legoon
 jramaswami
-
-59205 is too high
 """
 
 
@@ -51,19 +49,54 @@ def test_dig_trench():
     assert len(trench) == 38
 
 
-def trench_volume(trench):
-    min_cols = collections.defaultdict(lambda: math.inf)
-    max_cols = collections.defaultdict(lambda: -math.inf)
+def get_corners(trench):
+    "Return the top left and bottom right corners of grid"
     min_row, max_row = math.inf, -math.inf
+    min_col, max_col = math.inf, -math.inf
     for posn in trench:
-        min_cols[posn.row] = min(min_cols[posn.row], posn.col)
-        max_cols[posn.row] = max(max_cols[posn.row], posn.col)
-        min_row = min(min_row, posn.row)
-        max_row = max(max_row, posn.row)
+        min_row, max_row = min(min_row, posn.row), max(max_row, posn.row)
+        min_col, max_col = min(min_col, posn.col), max(max_col, posn.col)
+    return Vector(min_row, min_col), Vector(max_row, max_col)
 
-    volume = 0
-    for row in range(min_row, max_row+1):
-        volume += (max_cols[row] - min_cols[row] + 1)
+
+
+def print_trench(trench):
+    grid = []
+    tl, br = get_corners(trench)
+    for r in range(tl.row, br.row+1):
+        grid_row = []
+        for c in range(tl.col, br.col+1):
+            if Vector(r,c) in trench:
+                grid_row.append('#')
+            else:
+                grid_row.append('.')
+        grid.append(''.join(grid_row))
+    print('\n'.join(grid))
+
+
+def trench_volume(trench):
+    # Fill from outside.
+    tl, br = get_corners(trench)
+    # Move corners outside trench grid
+    tl = tl + Vector(-1,-1)
+    br = br + Vector(1, 1)
+    # Flood fill from outside
+    outside = set()
+    outside.add(tl)
+    queue = collections.deque()
+    queue.append(tl)
+    while queue:
+        curr = queue.popleft()
+        for dirn in DIRECTIONS.values():
+            neighbor = curr + dirn
+            if (tl.row <= neighbor.row <= br.row) and (tl.col <= neighbor.col <= br.col):
+                if neighbor in trench:
+                    continue
+                if neighbor not in outside:
+                    outside.add(neighbor)
+                    queue.append(neighbor)
+    volume = (br.row - tl.row + 1) * (br.col - tl.col + 1)
+    volume -= len(outside)
     return volume
 
 
@@ -81,9 +114,11 @@ def test_solve_a():
 def main():
     "Main program"
     import pyperclip
+    # dig_instructions = read_input('../../data/18/test18a.txt')
     dig_instructions = read_input('../../data/18/input18.txt')
     soln_a = solve_a(dig_instructions)
     print('The volume of the trench is', soln_a)
+    assert soln_a == 39194
     pyperclip.copy(str(soln_a))
 
 
