@@ -9,10 +9,13 @@ jramaswami
 import collections
 import operator
 
+
 Operation = collections.namedtuple('Operation', ['comparison', 'destination'])
 Comparison = collections.namedtuple('Comparison', ['attribute', 'comparison', 'value'])
 
+
 COMPARISONS = {'>': operator.gt, '<': operator.lt}
+
 
 def parse_workflow(raw_workflow):
     workflow = []
@@ -101,6 +104,75 @@ def test_solve_a():
     assert result == expected
 
 
+def solve_b(workflows):
+    accepted = 0
+    rejected = 0
+    init_part = {'x': (1, 4000), 'm': (1, 4000), 'a': (1, 4000), 's': (1, 4000)}
+    queue = collections.deque()
+    queue.append(('in', 0, init_part))
+    while queue:
+        wf, i, part = queue.popleft()
+        if wf == 'A':
+            t = 1
+            for a, b in part.values():
+                t *= (b - a + 1)
+            accepted += t
+            continue
+        if wf == 'R':
+            t = 1
+            for a, b in part.values():
+                t *= (b - a + 1)
+            rejected += t
+            continue
+        workflow = workflows[wf]
+        operation = workflow[i]
+        if operation.comparison == None:
+            # Else, move part to destination with index 0
+            queue.append((operation.destination, 0, part))
+        else:
+            comp = operation.comparison
+            if comp.comparison == operator.lt:
+                # Less than operation, split the range of the attribute
+                if part[comp.attribute][1] >= comp.value:
+                    # Create a part with a value above the range, and place it
+                    # back in the queue with the same workflow but the next
+                    # operation index
+                    part0 = {t: v for t, v in part.items()}
+                    part0[comp.attribute] = (comp.value, part0[comp.attribute][1])
+                    queue.append((wf, i+1, part0))
+                if part[comp.attribute][0] < comp.value:
+                    # Create a part with a value below the range, and place it
+                    # back in the queue with the destination workflow
+                    part1 = {t: v for t, v in part.items()}
+                    part1[comp.attribute] = (part1[comp.attribute][0], comp.value-1)
+                    queue.append((operation.destination, 0, part1))
+            else:
+                # Greater than operation, split the range of the attribute
+                if part[comp.attribute][0] <= comp.value:
+                    # Create a part with a value below the range, and place it
+                    # back in the queue with the same workflow but the next
+                    # operation index
+                    part0 = {t: v for t, v in part.items()}
+                    part0[comp.attribute] = (part0[comp.attribute][0], comp.value)
+                    queue.append((wf, i+1, part0))
+                if part[comp.attribute][1] > comp.value:
+                    # Create a part with a value above the range, and place it
+                    # back in the queue with the destination workflow
+                    part1 = {t: v for t, v in part.items()}
+                    part1[comp.attribute] = (comp.value+1, part1[comp.attribute][1])
+                    queue.append((operation.destination, 0, part1))
+
+    assert rejected + accepted == pow(4000, 4)
+    return accepted
+
+
+def test_solve_b():
+    workflows, _ = read_input('../../data/19/test19a.txt')
+    expected = 167409079868000
+    result = solve_b(workflows)
+    assert result == expected
+
+
 def main():
     "Main program"
     import pyperclip
@@ -109,7 +181,9 @@ def main():
     soln_a = solve_a(parts, workflows)
     print('The sum of the rating numbers is', soln_a)
     assert soln_a == 391132
-    soln_b = 0
+    soln_b = solve_b(workflows)
+    print('The distinct ratings combinations that are accepted is', soln_b)
+    assert soln_b == 128163929109524
     pyperclip.copy(str(soln_b))
 
 
