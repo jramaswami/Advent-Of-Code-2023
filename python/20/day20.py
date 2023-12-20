@@ -20,7 +20,6 @@ class Status(enum.IntEnum):
     On = enum.auto()
 
 
-
 class Broadcaster:
     def __init__(self, name):
         self.name = name
@@ -91,6 +90,7 @@ def parse_input(path):
 
 def push_button(modules_by_name, module_connections):
     low_pulses_sent = high_pulses_sent = 0
+    rx_received_low_pulse = False
     queue = collections.deque([('button', 'broadcaster', Pulse.Low)])
     while queue:
         sender, receiver, pulse = queue.popleft()
@@ -99,6 +99,9 @@ def push_button(modules_by_name, module_connections):
             low_pulses_sent += 1
         else:
             high_pulses_sent += 1
+
+        if receiver == 'rx' and pulse == Pulse.Low:
+            rx_received_low_pulse = True
 
         if receiver not in modules_by_name:
             continue
@@ -109,17 +112,37 @@ def push_button(modules_by_name, module_connections):
         if next_pulse is not None:
             for neighbor in module_connections[receiver]:
                 queue.append((receiver, neighbor, next_pulse))
-    return low_pulses_sent, high_pulses_sent
+
+    return low_pulses_sent, high_pulses_sent, rx_received_low_pulse
+
 
 def solve_a(modules_by_name, module_connections):
     low_pulses_sent = high_pulses_sent = 0
     for _ in range(1000):
-        lp, hp = push_button(modules_by_name, module_connections)
+        lp, hp, _ = push_button(modules_by_name, module_connections)
         low_pulses_sent += lp
         high_pulses_sent += hp
     print(low_pulses_sent, 'low pulses sent', high_pulses_sent, 'high pulses sent')
     soln_a = low_pulses_sent * high_pulses_sent
     return soln_a
+
+
+def solve_b(modules_by_name, module_connections):
+    tick = 0
+    while 1:
+        tick += 1
+        _, _, rx_received_low_pulse = push_button(modules_by_name, module_connections)
+        if rx_received_low_pulse:
+            return tick
+        if tick % 100_000 == 0:
+            T = []
+            for name in modules_by_name:
+                if isinstance(modules_by_name[name], Conjunction):
+                    t = modules_by_name[name].most_recent_pulse
+                    s = ''.join("1" if v == Pulse.High else "0"  for k, v in t.items())
+                    T.append(f'{name} {s}')
+            print(tick, ' | '.join(T))
+    return -1
 
 
 def test_solve_a():
@@ -138,7 +161,9 @@ def main():
     soln_a = solve_a(modules_by_name, module_connections)
     print('Solution a is', soln_a)
     assert soln_a == 873301506
-    pyperclip.copy(soln_a)
+    soln_b = solve_b(modules_by_name, module_connections)
+    print('Solution b is', soln_b)
+    pyperclip.copy(soln_b)
 
 
 
