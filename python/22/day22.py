@@ -43,7 +43,7 @@ def parse_input(path):
     return bricks
 
 
-def solve_a(bricks_):
+def solve(bricks_):
     # Don't mutate and sort bricks by their minimum z coordinate
     bricks = collections.deque(sorted(bricks_, key=lambda b: b.minz()))
     # Build a graph from the ground up through the bricks.
@@ -82,7 +82,7 @@ def solve_a(bricks_):
         brick_ = Brick(p1, p2, brick.id)
         grounded_bricks.append(brick_)
 
-    soln_a = 0
+    soln_a = soln_b = 0
     for x in range(1, len(graph)):
         # Can this be removed?
         queue = collections.deque([0])
@@ -99,13 +99,22 @@ def solve_a(bricks_):
 
         if len(visited) == len(bricks_) - 1:
             soln_a += 1
+        else:
+            soln_b += len(bricks_) - 1 - len(visited)
 
-    return soln_a
+    return soln_a, soln_b
 
 
 def test_solve_a():
     bricks = parse_input('../../data/22/test22a.txt')
-    assert solve_a(bricks) == 5
+    soln_a, _ = solve(bricks)
+    assert soln_a == 5
+
+
+def test_solve_b():
+    bricks = parse_input('../../data/22/test22a.txt')
+    _, soln_b = solve(bricks)
+    assert soln_b == 7
 
 
 def main():
@@ -113,10 +122,12 @@ def main():
     import pyperclip
     bricks = parse_input('../../data/22/input22.txt')
     # bricks = parse_input('../../data/22/test22a.txt')
-    soln_a = solve_a(bricks)
+    soln_a, soln_b = solve(bricks)
     print('The number of bricks you can disintegrate is', soln_a)
     assert soln_a == 509
-    pyperclip.copy(str(soln_a))
+    print('The number of bricks that fall is', soln_b)
+    assert soln_b == 102770
+    pyperclip.copy(str(soln_b))
 
 
 
