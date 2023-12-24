@@ -3,11 +3,15 @@ Advent of Code
 Day 24
 Never Tell Me The Odds
 jramaswami
+
+Thank you HyperNeutrino!
+REF: https://www.youtube.com/watch?v=guOyA7Ijqgk
 """
 
 
 import collections
 import math
+import sympy
 
 
 Vector = collections.namedtuple('Vector', ['x', 'y', 'z'])
@@ -42,20 +46,14 @@ def solve_a(hailstones, range):
     soln_a = 0
     for i, eqn1 in enumerate(eqns):
         for j, eqn2 in enumerate(eqns[i+1:], start=i+1):
-            # print(i, hailstones[i])
-            # print(j, hailstones[j])
-
             # eqn1[0]x - eqn1[1] = eqn2[0]x - eqn2[1]
             # (eqn1[0]- eqn2[0])x = eqn1[1] - eqn2[1]
             # (eqn1[1] - eqn2[1]) / (eqn1[0] - eqn2[0])
             if math.isclose(eqn1[0], eqn2[0]):
-                # print(eqn1, eqn2, 'have equal slopes')
                 continue
             x = (eqn1[1] - eqn2[1]) / (eqn1[0] - eqn2[0])
             y1 = (eqn1[0] * x) - eqn1[1]
             y2 = (eqn2[0] * x) - eqn2[1]
-            # print('intersection', x, y1, y2)
-            # assert math.isclose(y1, y2)
             if range[0] <= x <= range[1] and range[0] <= y1 <= range[1]:
                 # The intersection must be in the future for both hailstones
                 # so the sign of dx and dy must the the same as the hailstone's
@@ -72,20 +70,28 @@ def solve_a(hailstones, range):
 
                 if future1 and future2:
                     soln_a += 1
-            #         print('intersect @', (x, y1), 'INSIDE range')
-            #     if future1 == False:
-            #         print('insersect @', (x, y1), 'in the past for', i)
-            #     if future2 == False:
-            #         print('insersect @', (x, y1), 'in the past for', j)
-            # else:
-            #     print(hailstones[i])
-            #     print(hailstones[j])
-            #     print('intersect @', (x, y1), 'outside range')
     return soln_a
+
 
 def test_solve_a():
     hailstones = parse_input('../../data/24/test24a.txt')
     assert solve_a(hailstones, (7, 27)) == 2
+
+
+def solve_b(hailstones):
+    xr, yr, zr, vxr, vyr, vzr = sympy.symbols('xr, yr, zr, vxr, vyr, vzr')
+    equations = []
+    for (sx, sy, sz), (vx, vy, vz) in hailstones:
+        equations.append((xr - sx) * (vy - vyr) - (yr - sy) * (vx - vxr))
+        equations.append((yr - sy) * (vz - vzr) - (zr - sz) * (vy - vyr))
+    (answer, ) = sympy.solve(equations)
+    soln_b = answer[xr] + answer[yr] + answer[zr]
+    return soln_b
+
+
+def test_solve_b():
+    hailstones = parse_input('../../data/24/test24a.txt')
+    assert solve_b(hailstones) == 47
 
 
 def main():
@@ -95,7 +101,10 @@ def main():
     soln_a = solve_a(hailstones, (200000000000000, 400000000000000))
     print(soln_a, 'intersections between hailstones will occur')
     assert soln_a == 16812
-    pyperclip.copy(str(soln_a))
+    soln_b = solve_b(hailstones)
+    print('You get', soln_b, 'if you add up the X, Y, and Z coordinates of that initial position')
+    assert soln_b == 880547248556435
+    pyperclip.copy(str(soln_b))
 
 
 if __name__ == '__main__':
