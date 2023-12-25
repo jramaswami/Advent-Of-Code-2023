@@ -17,3 +17,16 @@ Day 17:
 
     Model the neighbors as turn or go forward min steps to max steps instead
     of just a single step forward counting consecutive blocks
+
+Day 18:
+    Try to use a quadtree to do the floodfill
+
+    Understand shoelace + pick's theorem better
+
+    Try modified flood fill like https://www.reddit.com/r/adventofcode/comments/18lmzo4/2023_day_18_part_2_modified_flood_fill/
+
+
+Day 25:
+    Explore minimum cut algorithm, maybe just using networkx
+
+    Explore using Edmonds-Karp and the max-flow/min-cut theorem
